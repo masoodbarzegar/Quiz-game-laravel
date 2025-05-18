@@ -1,9 +1,22 @@
-@import 'tailwindcss';
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
-@source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
-@source '../../storage/framework/views/*.php';
-@source '../**/*.blade.php';
-@source '../**/*.js';
+@layer base {
+    body {
+        @apply antialiased;
+    }
+}
+
+@layer components {
+    .btn {
+        @apply px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors;
+    }
+    
+    .card {
+        @apply bg-white rounded-lg shadow-md overflow-hidden;
+    }
+}
 
 @theme {
     --font-sans: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
