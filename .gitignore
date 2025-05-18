@@ -1,0 +1,30 @@
+# Ignore Docker
+.env.docker
+
+# Docker
+/docker
+docker/mysql/data
+docker/mysql/logs
+docker/mysql/conf
+docker/mysql/init
+
+# Laravel specific (if not already handled in src/.gitignore, include for safety)
+src/vendor
+src/node_modules
+src/public/storage
+src/public/assets
+src/storage/*.key
+src/storage/logs
+src/storage/framework
+src/.env
+
+# Node & Vite
+src/node_modules
+src/public/build
+src/resources/js/.vite
+
+# Optional: IDE/System files
+.DS_Store
+.idea
+.vscode
+
