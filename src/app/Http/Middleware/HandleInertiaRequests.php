@@ -4,45 +4,62 @@ namespace App\Http\Middleware;
 
 use Illuminate\Http\Request;
 use Inertia\Middleware;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 
 class HandleInertiaRequests extends Middleware
 {
-    /**
-     * The root template that's loaded on the first page visit.
-     *
-     * @see https://inertiajs.com/server-side-setup#root-template
-     * @var string
-     */
-    protected $rootView = 'app';
-
-    /**
-     * Determines the current asset version.
-     *
-     * @see https://inertiajs.com/asset-versioning
-     * @param  \Illuminate\Http\Request  $request
-     * @return string|null
-     */
-    public function version(Request $request): ?string
-    {
-        return parent::version($request);
-    }
-
-    /**
-     * Defines the props that are shared by default.
-     *
-     * @see https://inertiajs.com/shared-data
-     * @param  \Illuminate\Http\Request  $request
-     * @return array
-     */
     public function share(Request $request): array
     {
+        $user = null;
+
+        // Log middleware execution for admin routes with security context
+        if ($request->is('admin/*')) {
+            Log::info('Inertia share middleware:', [
+                'is_admin_route' => true,
+                'path' => $request->path(),
+                'method' => $request->method(),
+                'authenticated' => Auth::guard('admin')->check(),
+                'ip' => $request->ip()
+            ]);
+        }
+
+        if ($request->is('admin/*') && Auth::guard('admin')->check()) {
+            $authUser = Auth::guard('admin')->user();
+            $user = [
+                'id' => $authUser->id,
+                'name' => $authUser->name,
+                'email' => $authUser->email,
+                'role' => $authUser->role,
+            ];
+        } elseif ($request->is('client/*') && Auth::guard('client')->check()) {
+            $authUser = Auth::guard('client')->user();
+            $user = [
+                'id' => $authUser->id,
+                'name' => $authUser->name,
+                'email' => $authUser->email,
+            ];
+        } elseif (Auth::guard('web')->check()) {
+            $authUser = Auth::guard('web')->user();
+            $user = [
+                'id' => $authUser->id,
+                'name' => $authUser->name,
+                'email' => $authUser->email,
+            ];
+        }
+
         return array_merge(parent::share($request), [
             'auth' => [
-                'user' => $request->user(),
+                'user' => $user,
             ],
+            'url' => $request->getRequestUri(),
             'flash' => [
-                'message' => fn () => $request->session()->get('message')
+                'message' => fn () => $request->session()->get('message'),
+                'error' => fn () => $request->session()->get('error'),
             ],
+            'errors' => fn () => $request->session()->get('errors')
+                ? $request->session()->get('errors')->getBag('default')->getMessages()
+                : [],
         ]);
     }
-} 
+}

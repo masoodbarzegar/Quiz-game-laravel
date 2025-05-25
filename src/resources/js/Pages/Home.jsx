@@ -1,9 +1,11 @@
 import React from 'react';
+import { Head } from '@inertiajs/react';
 import MainLayout from '@/Layouts/MainLayout';
 
 const Home = () => {
     return (
         <MainLayout>
+            <Head title="Home" />
             <div className="space-y-8">
                 {/* Hero Section */}
                 <div className="card">
