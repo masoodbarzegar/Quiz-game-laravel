@@ -1,11 +1,13 @@
 <?php
 
-namespace Tests\Unit;
+namespace Tests\Unit\Policies;
 
 use App\Models\User;
 use App\Models\Question;
 use App\Policies\QuestionPolicy;
 use PHPUnit\Framework\TestCase;
+use PHPUnit\Framework\Attributes\Test;  
+
 
 class QuestionPolicyTest extends TestCase
 {
@@ -40,7 +42,8 @@ class QuestionPolicyTest extends TestCase
         return $q;
     }
 
-    public function test_manager_can_do_everything()
+    #[Test]
+    public function manager_can_do_everything()
     {
         $manager = $this->makeUser('manager', 1);
         $question = $this->makeQuestion(2, 'pending');
@@ -54,7 +57,8 @@ class QuestionPolicyTest extends TestCase
         $this->assertTrue($this->policy->forceDelete($manager, $question));
     }
 
-    public function test_corrector_can_view_update_approve_but_not_delete()
+    #[Test]
+    public function corrector_can_view_update_approve_but_not_delete()
     {
         $corrector = $this->makeUser('corrector', 2);
         $question = $this->makeQuestion(3, 'pending');
@@ -68,7 +72,8 @@ class QuestionPolicyTest extends TestCase
         $this->assertFalse($this->policy->forceDelete($corrector, $question));
     }
 
-    public function test_general_can_view_and_create()
+    #[Test]
+    public function general_can_view_and_create()
     {
         $general = $this->makeUser('general', 3);
         $question = $this->makeQuestion(3, 'pending');
@@ -77,7 +82,8 @@ class QuestionPolicyTest extends TestCase
         $this->assertTrue($this->policy->create($general));
     }
 
-    public function test_general_can_update_own_pending_question()
+    #[Test]
+    public function general_can_update_own_pending_question()
     {
         $general = $this->makeUser('general', 3);
         $ownPending = $this->makeQuestion(3, 'pending');
@@ -90,7 +96,8 @@ class QuestionPolicyTest extends TestCase
         $this->assertFalse($this->policy->update($general, $othersPending));
     }
 
-    public function test_general_cannot_delete_approve_restore_forceDelete()
+    #[Test]
+    public function general_cannot_delete_approve_restore_forceDelete()
     {
         $general = $this->makeUser('general', 3);
         $question = $this->makeQuestion(3, 'pending');

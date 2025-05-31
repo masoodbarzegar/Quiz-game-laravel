@@ -1,11 +1,12 @@
 <?php
 
-namespace Tests\Unit;
+namespace Tests\Unit\Models;
 
 use App\Models\User;
 use App\Models\Question;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
+use PHPUnit\Framework\Attributes\Test;
 
 class QuestionTest extends TestCase
 {
@@ -36,19 +37,22 @@ class QuestionTest extends TestCase
         ]);
     }
 
-    public function test_question_has_creator_relationship(): void
+    #[Test]
+    public function question_has_creator_relationship(): void
     {
         $this->assertInstanceOf(User::class, $this->question->creator);
         $this->assertEquals($this->creator->id, $this->question->creator->id);
     }
 
-    public function test_question_has_approver_relationship(): void
+    #[Test]
+    public function question_has_approver_relationship(): void
     {
         $this->assertInstanceOf(User::class, $this->question->approver);
         $this->assertEquals($this->approver->id, $this->question->approver->id);
     }
 
-    public function test_question_has_rejecter_relationship(): void
+    #[Test]
+    public function question_has_rejecter_relationship(): void
     {
         $rejecter = User::factory()->create();
         $question = Question::factory()->create([
@@ -62,7 +66,8 @@ class QuestionTest extends TestCase
         $this->assertEquals($rejecter->id, $question->rejecter->id);
     }
 
-    public function test_question_scope_pending(): void
+    #[Test]
+    public function question_scope_pending(): void
     {
         Question::factory()->pending()->count(3)->create();
         
@@ -76,7 +81,8 @@ class QuestionTest extends TestCase
         });
     }
 
-    public function test_question_scope_approved(): void
+    #[Test]
+    public function question_scope_approved(): void
     {
         Question::factory()->approved()->count(2)->create();
         
@@ -90,7 +96,8 @@ class QuestionTest extends TestCase
         });
     }
 
-    public function test_question_scope_rejected(): void
+    #[Test]
+    public function question_scope_rejected(): void
     {
         $rejectedQuestions = Question::rejected()->get();
         
@@ -103,7 +110,8 @@ class QuestionTest extends TestCase
         });
     }
 
-    public function test_question_scope_by_difficulty(): void
+    #[Test]
+    public function question_scope_by_difficulty(): void
     {
         // Ensure a clean state before running this test
         Question::query()->delete(); // Or use truncate if you're not using transactions
@@ -125,7 +133,8 @@ class QuestionTest extends TestCase
         $this->assertEquals('hard', $hardQuestions->first()->difficulty_level);
     }
 
-    public function test_question_scope_by_category(): void
+    #[Test]
+    public function question_scope_by_category(): void
     {
         Question::factory()->create(['category' => 'Math']);
         Question::factory()->create(['category' => 'Science']);
@@ -139,7 +148,8 @@ class QuestionTest extends TestCase
         $this->assertEquals('Science', $scienceQuestions->first()->category);
     }
 
-    public function test_question_correct_answer_accessor(): void
+    #[Test]
+    public function question_correct_answer_accessor(): void
     {
         $question = Question::factory()->create([
             'choices' => ['A', 'B', 'C', 'D'],
@@ -149,7 +159,8 @@ class QuestionTest extends TestCase
         $this->assertEquals('B', $question->correct_answer);
     }
 
-    public function test_question_choices_mutator_validates_number_of_choices(): void
+    #[Test]
+    public function question_choices_mutator_validates_number_of_choices(): void
     {
         $this->expectException(\InvalidArgumentException::class);
         $this->expectExceptionMessage('A question must have exactly 4 choices.');
@@ -159,7 +170,8 @@ class QuestionTest extends TestCase
         ]);
     }
 
-    public function test_question_correct_choice_mutator_validates_range(): void
+    #[Test]
+    public function question_correct_choice_mutator_validates_range(): void
     {
         $this->expectException(\InvalidArgumentException::class);
         $this->expectExceptionMessage('Correct choice must be between 1 and 4.');
@@ -170,7 +182,8 @@ class QuestionTest extends TestCase
         ]);
     }
 
-    public function test_question_choices_mutator_handles_json_string(): void
+    #[Test]
+    public function question_choices_mutator_handles_json_string(): void
     {
         $question = Question::factory()->create([
             'choices' => json_encode(['A', 'B', 'C', 'D']),
@@ -182,7 +195,8 @@ class QuestionTest extends TestCase
         $this->assertEquals(['A', 'B', 'C', 'D'], $question->choices);
     }
 
-    public function test_question_soft_deletes(): void
+    #[Test]
+    public function question_soft_deletes(): void
     {
         $question = Question::factory()->create();
         $questionId = $question->id;
@@ -193,7 +207,8 @@ class QuestionTest extends TestCase
         $this->assertDatabaseHas('questions', ['id' => $questionId]);
     }
 
-    public function test_question_casts_attributes(): void
+    #[Test]
+    public function question_casts_attributes(): void
     {
         $question = Question::factory()->create([
             'choices' => ['A', 'B', 'C', 'D'],

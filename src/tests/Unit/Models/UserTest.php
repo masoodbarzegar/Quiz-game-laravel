@@ -1,12 +1,13 @@
 <?php
 
-namespace Tests\Unit;
+namespace Tests\Unit\Models;
 
 use App\Models\User;
 use App\Models\Question;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 use Illuminate\Support\Facades\Hash;
+use PHPUnit\Framework\Attributes\Test;
 
 class UserTest extends TestCase
 {
@@ -43,7 +44,8 @@ class UserTest extends TestCase
         ]);
     }
 
-    public function test_user_has_correct_fillable_attributes(): void
+    #[Test]
+    public function user_has_correct_fillable_attributes(): void
     {
         $user = User::factory()->create([
             'name' => 'Test User',
@@ -58,7 +60,8 @@ class UserTest extends TestCase
         $this->assertTrue($user->is_active);
     }
 
-    public function test_user_password_is_hashed(): void
+    #[Test]
+    public function user_password_is_hashed(): void
     {
         $password = 'password123';
         $user = User::factory()->create(['password' => $password]);
@@ -67,7 +70,8 @@ class UserTest extends TestCase
         $this->assertTrue(Hash::check($password, $user->password));
     }
 
-    public function test_user_has_hidden_attributes(): void
+    #[Test]
+    public function user_has_hidden_attributes(): void
     {
         $user = User::factory()->create();
         $userArray = $user->toArray();
@@ -76,7 +80,8 @@ class UserTest extends TestCase
         $this->assertArrayNotHasKey('remember_token', $userArray);
     }
 
-    public function test_user_has_correct_casts(): void
+    #[Test]
+    public function user_has_correct_casts(): void
     {
         $user = User::factory()->create([
             'email_verified_at' => now(),
@@ -87,7 +92,8 @@ class UserTest extends TestCase
         $this->assertIsBool($user->is_active);
     }
 
-    public function test_user_has_role_methods(): void
+    #[Test]
+    public function user_has_role_methods(): void
     {
         // Test hasRole method
         $this->assertTrue($this->manager->hasRole('manager'));
@@ -112,7 +118,8 @@ class UserTest extends TestCase
         $this->assertFalse($this->general->isCorrector());
     }
 
-    public function test_user_relationships_with_questions(): void
+    #[Test]
+    public function user_relationships_with_questions(): void
     {
         // Create questions for the user
         $createdQuestion = Question::factory()->create([
@@ -146,7 +153,8 @@ class UserTest extends TestCase
         $this->assertTrue($this->user->rejectedQuestions->contains($rejectedQuestion));
     }
 
-    public function test_user_can_be_activated_and_deactivated(): void
+    #[Test]
+    public function user_can_be_activated_and_deactivated(): void
     {
         $user = User::factory()->create(['is_active' => true]);
         
@@ -159,7 +167,8 @@ class UserTest extends TestCase
         $this->assertTrue($user->fresh()->is_active);
     }
 
-    public function test_user_email_verification(): void
+    #[Test]
+    public function user_email_verification(): void
     {
         $user = User::factory()->create([
             'email_verified_at' => null
@@ -174,7 +183,8 @@ class UserTest extends TestCase
         $this->assertTrue($user->hasVerifiedEmail());
     }
 
-    public function test_user_remember_token(): void
+    #[Test]
+    public function user_remember_token(): void
     {
         $user = User::factory()->create();
         $token = 'remember_token_123';
@@ -187,7 +197,8 @@ class UserTest extends TestCase
         $this->assertTrue($rememberToken === null || $rememberToken === '');
     }
 
-    public function test_user_notification_preferences(): void
+    #[Test]
+    public function user_notification_preferences(): void
     {
         $user = User::factory()->create();
         
@@ -195,7 +206,8 @@ class UserTest extends TestCase
         $this->assertEquals($user->email, $user->routeNotificationForMail());
     }
 
-    public function test_user_factory_creates_valid_user(): void
+    #[Test]
+    public function user_factory_creates_valid_user(): void
     {
         $user = User::factory()->create();
 
@@ -206,7 +218,8 @@ class UserTest extends TestCase
         $this->assertIsBool($user->is_active);
     }
 
-    public function test_user_can_have_multiple_roles_checked(): void
+    #[Test]
+    public function user_can_have_multiple_roles_checked(): void
     {
         $this->assertTrue($this->manager->hasRole(['manager', 'corrector']));
         $this->assertFalse($this->manager->hasRole(['corrector', 'general']));

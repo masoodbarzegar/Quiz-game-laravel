@@ -30,7 +30,7 @@ class RedirectIfAuthenticated
                 
                 // For client routes, only redirect if authenticated as client
                 if ($guard === 'client') {
-                    return redirect()->route('client.dashboard');
+                    return redirect()->route('profile');
                 }
                 
                 // For web guard (default), redirect to home

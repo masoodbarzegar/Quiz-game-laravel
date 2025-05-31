@@ -1,12 +1,13 @@
 <?php
 
-namespace Tests\Feature\Admin;
+namespace Tests\Feature\Http\Controllers\Admin;
 
 use App\Models\User;
 use App\Models\Question;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 use Illuminate\Support\Facades\Session;
+use PHPUnit\Framework\Attributes\Test;
 
 class AdminQuestionControllerTest extends TestCase
 {
@@ -63,7 +64,8 @@ class AdminQuestionControllerTest extends TestCase
             ->$method($route, array_merge($data, ['_token' => $token]));
     }
 
-    public function test_manager_can_view_questions_list(): void
+    #[Test]
+    public function manager_can_view_questions_list(): void
     {
         $response = $this->withCsrfToken('get', route('admin.questions.index'));
 
@@ -77,21 +79,24 @@ class AdminQuestionControllerTest extends TestCase
         );
     }
 
-    public function test_corrector_can_view_questions_list(): void
+    #[Test]
+    public function corrector_can_view_questions_list(): void
     {
         $response = $this->withCsrfToken('get', route('admin.questions.index'), [], $this->corrector);
 
         $response->assertStatus(200);
     }
 
-    public function test_general_admin_can_view_questions_list(): void
+    #[Test]
+    public function general_admin_can_view_questions_list(): void
     {
         $response = $this->withCsrfToken('get', route('admin.questions.index'), [], $this->general);
 
         $response->assertStatus(200);
     }
 
-    public function test_manager_can_create_question(): void
+    #[Test]
+    public function manager_can_create_question(): void
     {
         $questionData = [
             'question_text' => 'Test Question?',
@@ -115,7 +120,8 @@ class AdminQuestionControllerTest extends TestCase
         ]);
     }
 
-    public function test_general_admin_can_create_question(): void
+    #[Test]
+    public function general_admin_can_create_question(): void
     {
         $questionData = [
             'question_text' => 'Test Question?',
@@ -132,7 +138,8 @@ class AdminQuestionControllerTest extends TestCase
         $response->assertSessionHas('success');
     }
 
-    public function test_corrector_cannot_create_question(): void
+    #[Test]
+    public function corrector_cannot_create_question(): void
     {
         $questionData = [
             'question_text' => 'Test Question?',
@@ -149,7 +156,8 @@ class AdminQuestionControllerTest extends TestCase
         $response->assertSessionHas('error');
     }
 
-    public function test_manager_can_edit_question(): void
+    #[Test]
+    public function manager_can_edit_question(): void
     {
         $updateData = [
             'question_text' => 'Updated Question?',
@@ -173,7 +181,8 @@ class AdminQuestionControllerTest extends TestCase
         ]);
     }
 
-    public function test_manager_can_delete_question(): void
+    #[Test]
+    public function manager_can_delete_question(): void
     {
         $response = $this->withCsrfToken('delete', route('admin.questions.destroy', $this->question));
 
@@ -185,7 +194,8 @@ class AdminQuestionControllerTest extends TestCase
         ]);
     }
 
-    public function test_corrector_cannot_delete_question(): void
+    #[Test]
+    public function corrector_cannot_delete_question(): void
     {
         $response = $this->withCsrfToken('delete', route('admin.questions.destroy', $this->question), [], $this->corrector);
 
@@ -197,7 +207,8 @@ class AdminQuestionControllerTest extends TestCase
         ]);
     }
 
-    public function test_manager_can_approve_question(): void
+    #[Test]
+    public function manager_can_approve_question(): void
     {
         $response = $this->withCsrfToken('post', route('admin.questions.approve', $this->question));
 
@@ -211,7 +222,8 @@ class AdminQuestionControllerTest extends TestCase
         ]);
     }
 
-    public function test_corrector_can_approve_question(): void
+    #[Test]
+    public function corrector_can_approve_question(): void
     {
         $response = $this->withCsrfToken('post', route('admin.questions.approve', $this->question), [], $this->corrector);
 
@@ -225,7 +237,8 @@ class AdminQuestionControllerTest extends TestCase
         ]);
     }
 
-    public function test_manager_can_reject_question(): void
+    #[Test]
+    public function manager_can_reject_question(): void
     {
         $rejectData = [
             'rejection_reason' => 'This question needs improvement'
@@ -244,7 +257,8 @@ class AdminQuestionControllerTest extends TestCase
         ]);
     }
 
-    public function test_validation_rules_are_enforced_when_creating_question(): void
+    #[Test]
+    public function validation_rules_are_enforced_when_creating_question(): void
     {
         $invalidData = [
             'question_text' => '',
@@ -263,7 +277,8 @@ class AdminQuestionControllerTest extends TestCase
         ]);
     }
 
-    public function test_filter_by_status(): void
+    #[Test]
+    public function filter_by_status(): void
     {
         // Create two approved questions
         Question::factory()->create(['status' => 'approved']);
@@ -276,7 +291,8 @@ class AdminQuestionControllerTest extends TestCase
         );
     }
 
-    public function test_filter_by_difficulty(): void
+    #[Test]
+    public function filter_by_difficulty(): void
     {
         // Create two hard questions so that the assertion (expecting 2) passes.
         Question::factory()->create(['difficulty_level' => 'hard']);
@@ -289,7 +305,8 @@ class AdminQuestionControllerTest extends TestCase
         );
     }
 
-    public function test_filter_by_category(): void
+    #[Test]
+    public function filter_by_category(): void
     {
         // Create one Math question
         Question::factory()->create(['category' => 'Math']);

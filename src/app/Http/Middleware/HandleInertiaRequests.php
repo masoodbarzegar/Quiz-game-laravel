@@ -24,6 +24,7 @@ class HandleInertiaRequests extends Middleware
             ]);
         }
 
+        // Check authentication in order of priority
         if ($request->is('admin/*') && Auth::guard('admin')->check()) {
             $authUser = Auth::guard('admin')->user();
             $user = [
@@ -32,7 +33,7 @@ class HandleInertiaRequests extends Middleware
                 'email' => $authUser->email,
                 'role' => $authUser->role,
             ];
-        } elseif ($request->is('client/*') && Auth::guard('client')->check()) {
+        } elseif (Auth::guard('client')->check()) {
             $authUser = Auth::guard('client')->user();
             $user = [
                 'id' => $authUser->id,
@@ -59,7 +60,7 @@ class HandleInertiaRequests extends Middleware
             ],
             'errors' => fn () => $request->session()->get('errors')
                 ? $request->session()->get('errors')->getBag('default')->getMessages()
-                : [],
+                : (object) [],
         ]);
     }
 }

@@ -69,7 +69,7 @@ class HandleInertiaRequestsFeatureTest extends TestCase
 
         $this->actingAs($user);
 
-        $response = $this->get('/dashboard');
+        $response = $this->get('/');
 
         $response->assertInertia(fn (Assert $page) => $page
             ->where('auth.user', [

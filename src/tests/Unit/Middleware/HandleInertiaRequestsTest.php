@@ -4,12 +4,12 @@ namespace Tests\Unit\Middleware;
 
 use App\Http\Middleware\HandleInertiaRequests;
 use App\Models\User;
+use App\Models\Client;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Request;
-use Illuminate\Http\Response;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Session;
 use Illuminate\Support\MessageBag;
 use Illuminate\Support\ViewErrorBag;
 use Inertia\Inertia;
@@ -20,209 +20,168 @@ class HandleInertiaRequestsTest extends TestCase
 {
     use RefreshDatabase;
 
-    protected $middleware;
+    protected HandleInertiaRequests $middleware;
 
     protected function setUp(): void
     {
         parent::setUp();
         
-        // Clear any existing auth state
         foreach (['web', 'admin', 'client'] as $guard) {
             Auth::guard($guard)->logout();
         }
         session()->flush();
+        Inertia::flushShared();
         
-        // Set up fresh spy for each test
         Log::spy();
-        
-        // Create a test view for Inertia
-        view()->addLocation(resource_path('views'));
-        view()->addNamespace('app', resource_path('views'));
         
         $this->middleware = new HandleInertiaRequests();
     }
 
     protected function tearDown(): void
     {
-        // Clear all auth guards
         foreach (['web', 'admin', 'client'] as $guard) {
             Auth::guard($guard)->logout();
         }
-        
-        // Clear session
         session()->flush();
-        
+        Inertia::flushShared();
         parent::tearDown();
     }
 
-    #[Test]
-    public function it_shares_user_data_when_authenticated(): void
+    private function makeInertiaRequest(string $uri, string $method = 'GET'): Request
     {
-        $user = User::factory()->create([
+        $request = Request::create($uri, $method);
+        $request->headers->set('X-Inertia', 'true');
+        $request->headers->set('X-Requested-With', 'XMLHttpRequest');
+        $request->headers->set('Accept', 'application/json, text/plain, */*');
+        $request->setLaravelSession($this->app['session.store']);
+        return $request;
+    }
+
+    #[Test]
+    public function it_shares_admin_user_data_when_authenticated_on_admin_route(): void
+    {
+        $adminUser = User::factory()->create([
             'role' => 'manager',
             'is_active' => true,
         ]);
+        Auth::guard('admin')->login($adminUser);
 
-        Auth::guard('admin')->login($user);
-        session()->put('user', [
-            'id' => $user->id,
-            'name' => $user->name,
-            'email' => $user->email,
-            'role' => $user->role,
-        ]);
-
-        $request = Request::create('/admin/dashboard', 'GET');
-        $request->headers->set('X-Inertia', 'true');
-        $request->headers->set('Accept', 'application/json');
-        $request->setLaravelSession($this->app['session.store']);
+        $request = $this->makeInertiaRequest('/admin/dashboard');
 
         $next = function ($request) {
-            $inertiaResponse = Inertia::render('Admin/Dashboard');
-            return new Response(
-                $inertiaResponse->toResponse($request)->getContent(),
-                200,
-                ['Content-Type' => 'application/json']
-            );
+            return new JsonResponse();
         };
 
-        $response = $this->middleware->handle($request, $next);
+        $this->middleware->handle($request, $next);
         
-        // Debug the response
-        $content = $response->getContent();
-        Log::debug('Inertia Test Response', [
-            'content' => $content,
-            'content_type' => $response->headers->get('Content-Type'),
-            'status' => $response->getStatusCode(),
-            'headers' => $response->headers->all(),
-            'raw_content' => bin2hex($content) // This will help us see any hidden characters
-        ]);
+        $sharedProps = Inertia::getShared();
 
-        $this->assertJson($content);
-        $page = json_decode($content, true);
-
-        $this->assertEquals('Admin/Dashboard', $page['component']);
+        $this->assertArrayHasKey('auth', $sharedProps);
+        $this->assertArrayHasKey('user', $sharedProps['auth']);
         $this->assertEquals([
-            'id' => $user->id,
-            'name' => $user->name,
-            'email' => $user->email,
-            'role' => $user->role,
-        ], $page['props']['auth']['user']);
+            'id' => $adminUser->id,
+            'name' => $adminUser->name,
+            'email' => $adminUser->email,
+            'role' => $adminUser->role,
+        ], $sharedProps['auth']['user']);
+    }
+    
+    #[Test]
+    public function it_shares_client_user_data_when_authenticated_on_client_route(): void
+    {
+        $clientUser = Client::factory()->create();
+        Auth::guard('client')->login($clientUser);
+
+        $request = $this->makeInertiaRequest('/my-profile');
+
+        $next = function ($request) {
+            return new JsonResponse();
+        };
+
+        $this->middleware->handle($request, $next);
+        $sharedProps = Inertia::getShared();
+
+        $this->assertArrayHasKey('auth', $sharedProps);
+        $this->assertArrayHasKey('user', $sharedProps['auth']);
+        $this->assertEquals([
+            'id' => $clientUser->id,
+            'name' => $clientUser->name,
+            'email' => $clientUser->email,
+        ], $sharedProps['auth']['user']);
     }
 
     #[Test]
     public function it_shares_null_user_data_when_not_authenticated(): void
     {
-        $request = Request::create('/admin/login', 'GET');
-        $request->headers->set('X-Inertia', 'true');
-        $request->headers->set('Accept', 'application/json');
-        $request->setLaravelSession($this->app['session.store']);
+        Auth::guard('admin')->logout();
+        Auth::guard('client')->logout();
+        Auth::guard('web')->logout();
+        session()->flush();
+
+        $request = $this->makeInertiaRequest('/admin/login');
 
         $next = function ($request) {
-            $inertiaResponse = Inertia::render('Admin/Auth/Login');
-            return new Response(
-                $inertiaResponse->toResponse($request)->getContent(),
-                200,
-                ['Content-Type' => 'application/json']
-            );
+            return new JsonResponse();
         };
 
-        $response = $this->middleware->handle($request, $next);
+        $this->middleware->handle($request, $next);
+        $sharedProps = Inertia::getShared();
 
-        $this->assertJson($response->getContent());
-        $page = json_decode($response->getContent(), true);
-
-        $this->assertEquals('Admin/Auth/Login', $page['component']);
-        $this->assertNull($page['props']['auth']['user']);
+        $this->assertArrayHasKey('auth', $sharedProps);
+        $this->assertNull($sharedProps['auth']['user']);
     }
 
     #[Test]
     public function it_shares_flash_messages(): void
     {
-        $user = User::factory()->create([
-            'role' => 'manager',
-            'is_active' => true,
-        ]);
+        $adminUser = User::factory()->create(['role' => 'manager']);
+        Auth::guard('admin')->login($adminUser);
 
-        Auth::guard('admin')->login($user);
-        session()->put('user', [
-            'id' => $user->id,
-            'name' => $user->name,
-            'email' => $user->email,
-            'role' => $user->role,
-        ]);
-        session()->put('message', 'Test flash message');
-        session()->put('error', 'Test error message');
+        $this->app['session.store']->put('message', 'Test flash message');
+        $this->app['session.store']->put('error', 'Test error message');
 
-        $request = Request::create('/admin/dashboard', 'GET');
-        $request->headers->set('X-Inertia', 'true');
-        $request->headers->set('Accept', 'application/json');
-        $request->setLaravelSession($this->app['session.store']);
+        $request = $this->makeInertiaRequest('/admin/dashboard');
 
         $next = function ($request) {
-            $inertiaResponse = Inertia::render('Admin/Dashboard');
-            return new Response(
-                $inertiaResponse->toResponse($request)->getContent(),
-                200,
-                ['Content-Type' => 'application/json']
-            );
+            return new JsonResponse();
         };
 
-        $response = $this->middleware->handle($request, $next);
+        $this->middleware->handle($request, $next);
+        $sharedProps = Inertia::getShared();
 
-        $this->assertJson($response->getContent());
-        $page = json_decode($response->getContent(), true);
-
-        $this->assertEquals('Admin/Dashboard', $page['component']);
-        $this->assertEquals('Test flash message', $page['props']['flash']['message']);
-        $this->assertEquals('Test error message', $page['props']['flash']['error']);
+        $this->assertArrayHasKey('flash', $sharedProps);
+        $this->assertInstanceOf(\Closure::class, $sharedProps['flash']['message']);
+        $this->assertInstanceOf(\Closure::class, $sharedProps['flash']['error']);
+        $this->assertEquals('Test flash message', call_user_func($sharedProps['flash']['message']));
+        $this->assertEquals('Test error message', call_user_func($sharedProps['flash']['error']));
     }
 
     #[Test]
-    public function it_handles_errors_correctly(): void
+    public function it_handles_validation_errors_correctly(): void
     {
-        $user = User::factory()->create([
-            'role' => 'manager',
-            'is_active' => true,
-        ]);
-
-        Auth::guard('admin')->login($user);
-        session()->put('user', [
-            'id' => $user->id,
-            'name' => $user->name,
-            'email' => $user->email,
-            'role' => $user->role,
-        ]);
+        $adminUser = User::factory()->create(['role' => 'manager']);
+        Auth::guard('admin')->login($adminUser);
 
         $errors = new ViewErrorBag();
-        $errors->put('default', new MessageBag([
+        $errorMessages = [
             'email' => ['The email field is required.'],
             'password' => ['The password field is required.'],
-        ]));
-        session()->put('errors', $errors);
+        ];
+        $errors->put('default', new MessageBag($errorMessages));
+        
+        $this->app['session.store']->put('errors', $errors);
 
-        $request = Request::create('/admin/dashboard', 'GET');
-        $request->headers->set('X-Inertia', 'true');
-        $request->headers->set('Accept', 'application/json');
-        $request->setLaravelSession($this->app['session.store']);
+        $request = $this->makeInertiaRequest('/admin/some-action-that-failed');
 
         $next = function ($request) {
-            $inertiaResponse = Inertia::render('Admin/Dashboard');
-            return new Response(
-                $inertiaResponse->toResponse($request)->getContent(),
-                200,
-                ['Content-Type' => 'application/json']
-            );
+            return new JsonResponse();
         };
 
-        $response = $this->middleware->handle($request, $next);
+        $this->middleware->handle($request, $next);
+        $sharedProps = Inertia::getShared();
 
-        $this->assertJson($response->getContent());
-        $page = json_decode($response->getContent(), true);
-
-        $this->assertEquals('Admin/Dashboard', $page['component']);
-        $this->assertEquals([
-            'email' => ['The email field is required.'],
-            'password' => ['The password field is required.'],
-        ], $page['props']['errors']);
+        $this->assertArrayHasKey('errors', $sharedProps);
+        $this->assertInstanceOf(\Closure::class, $sharedProps['errors']);
+        $this->assertEquals($errorMessages, call_user_func($sharedProps['errors']));
     }
 } 

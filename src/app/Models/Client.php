@@ -43,4 +43,28 @@ class Client extends Authenticatable
         'password' => 'hashed',
         'is_active' => 'boolean',
     ];
+
+    /**
+     * Get the game sessions for the client.
+     */
+    public function gameSessions()
+    {
+        return $this->hasMany(GameSession::class);
+    }
+
+    /**
+     * Get the client's completed games.
+     */
+    public function completedGames()
+    {
+        return $this->gameSessions()->where('status', 'completed');
+    }
+
+    /**
+     * Get the client's in-progress games.
+     */
+    public function inProgressGames()
+    {
+        return $this->gameSessions()->where('status', 'in_progress');
+    }
 } 

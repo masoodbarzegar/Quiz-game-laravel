@@ -1,16 +1,16 @@
 import React from 'react';
 import { Head, Link } from '@inertiajs/react';
-import AppLayout from '@/Layouts/AppLayout';
+import GuestLayout from '@/Layouts/GuestLayout';
 
-export default function Home() {
+export default function Welcome() {
     return (
-        <AppLayout>
-            <Head title="Welcome to QuizGame" />
+        <GuestLayout>
+            <Head title="Welcome" />
 
             {/* Hero Section */}
-            <div className="relative">
+            <div className="relative bg-white overflow-hidden">
                 <div className="max-w-7xl mx-auto">
-                    <div className="relative z-10 pb-8 sm:pb-16 md:pb-20 lg:w-full lg:pb-28 xl:pb-32">
+                    <div className="relative z-10 pb-8 bg-white sm:pb-16 md:pb-20 lg:max-w-2xl lg:w-full lg:pb-28 xl:pb-32">
                         <main className="mt-10 mx-auto max-w-7xl px-4 sm:mt-12 sm:px-6 md:mt-16 lg:mt-20 lg:px-8 xl:mt-28">
                             <div className="sm:text-center lg:text-left">
                                 <h1 className="text-4xl tracking-tight font-extrabold text-gray-900 sm:text-5xl md:text-6xl">
@@ -24,7 +24,7 @@ export default function Home() {
                                 <div className="mt-5 sm:mt-8 sm:flex sm:justify-center lg:justify-start">
                                     <div className="rounded-md shadow">
                                         <Link
-                                            href={"/register"}
+                                            href={route('register')}
                                             className="w-full flex items-center justify-center px-8 py-3 border border-transparent text-base font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 md:py-4 md:text-lg md:px-10"
                                         >
                                             Get Started
@@ -32,7 +32,7 @@ export default function Home() {
                                     </div>
                                     <div className="mt-3 sm:mt-0 sm:ml-3">
                                         <Link
-                                            href={"/games/index"}
+                                            href={route('games.index')}
                                             className="w-full flex items-center justify-center px-8 py-3 border border-transparent text-base font-medium rounded-md text-indigo-700 bg-indigo-100 hover:bg-indigo-200 md:py-4 md:text-lg md:px-10"
                                         >
                                             Browse Games
@@ -43,15 +43,25 @@ export default function Home() {
                         </main>
                     </div>
                 </div>
+                <div className="lg:absolute lg:inset-y-0 lg:right-0 lg:w-1/2">
+                    <img
+                        className="h-56 w-full object-cover sm:h-72 md:h-96 lg:w-full lg:h-full"
+                        src="/images/hero-quiz.jpg"
+                        alt="Quiz game illustration"
+                    />
+                </div>
             </div>
 
             {/* Features Section */}
-            <div className="py-12 bg-white">
+            <div className="py-12 bg-gray-50">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     <div className="lg:text-center">
                         <h2 className="text-base text-indigo-600 font-semibold tracking-wide uppercase">Features</h2>
                         <p className="mt-2 text-3xl leading-8 font-extrabold tracking-tight text-gray-900 sm:text-4xl">
                             Why Choose Our Platform
+                        </p>
+                        <p className="mt-4 max-w-2xl text-xl text-gray-500 lg:mx-auto">
+                            We provide an engaging and interactive learning experience through our quiz platform.
                         </p>
                     </div>
 
@@ -65,7 +75,7 @@ export default function Home() {
                                     </svg>
                                 </div>
                                 <div className="ml-16">
-                                    <h3 className="text-lg font-medium text-gray-900">Diverse Topics</h3>
+                                    <h3 className="text-lg leading-6 font-medium text-gray-900">Diverse Topics</h3>
                                     <p className="mt-2 text-base text-gray-500">
                                         Explore a wide range of topics from general knowledge to specialized subjects.
                                     </p>
@@ -80,7 +90,7 @@ export default function Home() {
                                     </svg>
                                 </div>
                                 <div className="ml-16">
-                                    <h3 className="text-lg font-medium text-gray-900">Real-time Feedback</h3>
+                                    <h3 className="text-lg leading-6 font-medium text-gray-900">Real-time Feedback</h3>
                                     <p className="mt-2 text-base text-gray-500">
                                         Get immediate feedback on your answers and learn from detailed explanations.
                                     </p>
@@ -95,7 +105,7 @@ export default function Home() {
                                     </svg>
                                 </div>
                                 <div className="ml-16">
-                                    <h3 className="text-lg font-medium text-gray-900">Progress Tracking</h3>
+                                    <h3 className="text-lg leading-6 font-medium text-gray-900">Progress Tracking</h3>
                                     <p className="mt-2 text-base text-gray-500">
                                         Monitor your learning journey with detailed statistics and progress reports.
                                     </p>
@@ -110,7 +120,7 @@ export default function Home() {
                                     </svg>
                                 </div>
                                 <div className="ml-16">
-                                    <h3 className="text-lg font-medium text-gray-900">Community Features</h3>
+                                    <h3 className="text-lg leading-6 font-medium text-gray-900">Community Features</h3>
                                     <p className="mt-2 text-base text-gray-500">
                                         Connect with other learners, share achievements, and compete in friendly challenges.
                                     </p>
@@ -132,13 +142,13 @@ export default function Home() {
                         Create your account and start your learning journey with our interactive quiz platform.
                     </p>
                     <Link
-                        href={"/register"}
+                        href={route('register')}
                         className="mt-8 w-full inline-flex items-center justify-center px-5 py-3 border border-transparent text-base font-medium rounded-md text-indigo-600 bg-white hover:bg-indigo-50 sm:w-auto"
                     >
                         Sign up for free
                     </Link>
                 </div>
             </div>
-        </AppLayout>
+        </GuestLayout>
     );
 } 

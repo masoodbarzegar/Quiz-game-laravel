@@ -21,6 +21,9 @@ class StoreQuestionRequest extends FormRequest
                 'array',
                 'size:4',
                 function ($attribute, $value, $fail) {
+                    if (!is_array($value)) {
+                        return; // Do not proceed if not an array, previous rule handles it.
+                    }
                     if (count(array_unique($value)) !== count($value)) {
                         $fail('All choices must be unique.');
                     }

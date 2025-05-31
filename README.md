@@ -24,10 +24,9 @@ A full-stack quiz game application built with **Laravel 12** and **React** using
 Each test consists of **20 questions**, selected randomly based on difficulty:
 | Level | Number of Questions | Points per Correct Answer |
 |-------|----------------------|----------------------------|
-| 1     | 10                   | 2                          |
-| 2     | 5                    | 4                          |
-| 3     | 5                    | 6                          |
-| 4     | 3                    | 10                         |
+| 1     | 10                   | 3                          |
+| 2     | 6                    | 5                          |
+| 3     | 5                    | 8                          |
 
 **Maximum Score:** 100 points
 

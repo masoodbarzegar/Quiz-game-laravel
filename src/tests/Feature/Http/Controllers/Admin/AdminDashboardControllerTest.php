@@ -1,6 +1,6 @@
 <?php
 
-namespace Tests\Feature\Admin;
+namespace Tests\Feature\Http\Controllers\Admin;
 
 use App\Models\User;
 use App\Models\Question;
@@ -8,6 +8,7 @@ use App\Models\Client;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 use Illuminate\Support\Facades\Session;
+use PHPUnit\Framework\Attributes\Test;
 
 class AdminDashboardControllerTest extends TestCase
 {
@@ -53,8 +54,9 @@ class AdminDashboardControllerTest extends TestCase
         
         return csrf_token();
     }
-
-    public function test_manager_can_access_dashboard(): void
+    
+    #[Test]
+    public function manager_can_access_dashboard(): void
     {
         $response = $this->actingAs($this->manager, 'admin')
             ->get(route('admin.dashboard'));
@@ -68,7 +70,8 @@ class AdminDashboardControllerTest extends TestCase
         );
     }
 
-    public function test_corrector_can_access_dashboard(): void
+    #[Test]
+    public function corrector_can_access_dashboard(): void
     {
         $response = $this->actingAs($this->corrector, 'admin')
             ->get(route('admin.dashboard'));
@@ -82,7 +85,8 @@ class AdminDashboardControllerTest extends TestCase
         );
     }
 
-    public function test_general_admin_can_access_dashboard(): void
+    #[Test]
+    public function general_admin_can_access_dashboard(): void
     {
         $response = $this->actingAs($this->general, 'admin')
             ->get(route('admin.dashboard'));
@@ -96,7 +100,8 @@ class AdminDashboardControllerTest extends TestCase
         );
     }
 
-    public function test_dashboard_shows_correct_stats(): void
+    #[Test]
+    public function dashboard_shows_correct_stats(): void
     {
         $response = $this->actingAs($this->manager, 'admin')
             ->get(route('admin.dashboard'));
@@ -113,7 +118,8 @@ class AdminDashboardControllerTest extends TestCase
         );
     }
 
-    public function test_manager_sees_recent_clients(): void
+    #[Test]
+    public function manager_sees_recent_clients(): void
     {
         $response = $this->actingAs($this->manager, 'admin')
             ->get(route('admin.dashboard'));
@@ -126,7 +132,8 @@ class AdminDashboardControllerTest extends TestCase
         );
     }
 
-    public function test_corrector_sees_pending_questions(): void
+    #[Test]
+    public function corrector_sees_pending_questions(): void
     {
         $response = $this->actingAs($this->corrector, 'admin')
             ->get(route('admin.dashboard'));
@@ -139,7 +146,8 @@ class AdminDashboardControllerTest extends TestCase
         );
     }
 
-    public function test_general_admin_sees_total_questions(): void
+    #[Test]
+    public function general_admin_sees_total_questions(): void
     {
         $response = $this->actingAs($this->general, 'admin')
             ->get(route('admin.dashboard'));
@@ -151,14 +159,16 @@ class AdminDashboardControllerTest extends TestCase
         );
     }
 
-    public function test_unauthenticated_user_cannot_access_dashboard(): void
+    #[Test]
+    public function unauthenticated_user_cannot_access_dashboard(): void
     {
         $response = $this->get(route('admin.dashboard'));
 
         $response->assertRedirect(route('admin.login'));
     }
 
-    public function test_inactive_user_cannot_access_dashboard(): void
+    #[Test]
+    public function inactive_user_cannot_access_dashboard(): void
     {
         $inactiveUser = User::factory()->inactive()->create([
             'is_active' => false,
@@ -172,7 +182,8 @@ class AdminDashboardControllerTest extends TestCase
         $response->assertSessionHas('error');
     }
 
-    public function test_dashboard_updates_stats_in_real_time(): void
+    #[Test]
+    public function dashboard_updates_stats_in_real_time(): void
     {
         // Initial dashboard view
         $response = $this->actingAs($this->manager, 'admin')
@@ -198,7 +209,8 @@ class AdminDashboardControllerTest extends TestCase
         );
     }
 
-    public function test_dashboard_shows_flash_messages(): void
+    #[Test]
+    public function dashboard_shows_flash_messages(): void
     {
         $response = $this->actingAs($this->manager, 'admin')
             ->withSession([

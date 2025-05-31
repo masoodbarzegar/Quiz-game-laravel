@@ -1,11 +1,12 @@
 <?php
 
-namespace Tests\Feature\Admin;
+namespace Tests\Feature\Http\Controllers\Admin;
 
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 use Illuminate\Support\Facades\Session;
+use PHPUnit\Framework\Attributes\Test;
 
 class AdminUserControllerTest extends TestCase
 {
@@ -30,7 +31,8 @@ class AdminUserControllerTest extends TestCase
         return csrf_token();
     }
 
-    public function test_manager_can_create_new_admin_user(): void
+    #[Test]
+    public function manager_can_create_new_admin_user(): void
     {
         $token = $this->getCsrfToken();
 
@@ -59,7 +61,8 @@ class AdminUserControllerTest extends TestCase
         ]);
     }
 
-    public function test_non_manager_cannot_create_admin_user(): void
+    #[Test]
+    public function non_manager_cannot_create_admin_user(): void
     {
         $nonManager = User::factory()->create([
             'role' => 'corrector',
@@ -86,7 +89,8 @@ class AdminUserControllerTest extends TestCase
         $response->assertSessionHas('error');
     }
 
-    public function test_validation_rules_are_enforced_when_creating_user(): void
+    #[Test]
+    public function validation_rules_are_enforced_when_creating_user(): void
     {
         $token = $this->getCsrfToken();
 
