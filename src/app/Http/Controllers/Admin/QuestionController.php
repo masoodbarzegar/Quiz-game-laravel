@@ -21,8 +21,12 @@ class QuestionController extends Controller
     {
         $this->authorize('viewAny', Question::class);
 
+        $user = auth()->user();
         $query = Question::query()
             ->with(['creator', 'approver', 'rejecter'])
+            ->when($user->hasRole('general'), function ($query) use ($user) {
+                $query->where('created_by', $user->id);
+            })
             ->when($request->input('search'), function ($query, $search) {
                 $query->where(function ($query) use ($search) {
                     $query->where('question_text', 'like', "%{$search}%")
@@ -104,44 +108,58 @@ class QuestionController extends Controller
             'categories' => Question::distinct()->pluck('category')->filter(),
         ]);
     }
-
+   
     public function update(UpdateQuestionRequest $request, Question $question)
     {
         $this->authorize('update', $question);
 
-        $data = $request->validated();
+        $validatedData = $request->validated();
+        $originalStatus = $question->status;
 
-        // If status is being changed to approved or rejected
-        if (isset($data['status']) && $data['status'] !== $question->status) {
-            if ($data['status'] === 'approved') {
-                $data['approved_by'] = auth()->id();
-                $data['approved_at'] = now();
-                $data['rejected_by'] = null;
-                $data['rejected_at'] = null;
-                $data['rejection_reason'] = null;
-            } elseif ($data['status'] === 'rejected') {
-                $data['rejected_by'] = auth()->id();
-                $data['rejected_at'] = now();
-                $data['approved_by'] = null;
-                $data['approved_at'] = null;
+        // Handle status change and its side-effects
+        if (isset($validatedData['status']) && $validatedData['status'] !== $originalStatus) {
+            $newStatus = $validatedData['status'];
+
+            if ($newStatus === 'approved') {
+                $question->approved_by = auth('admin')->id();
+                $question->approved_at = now();
+                $question->rejected_by = null;
+                $question->rejected_at = null;
+                $question->rejection_reason = null;
+            } elseif ($newStatus === 'rejected') {
+                $question->rejected_by = auth('admin')->id();
+                $question->rejected_at = now();
+                // Ensure rejection_reason is persisted. It should be in validatedData if required by QuestionRequest.
+                $question->rejection_reason = $validatedData['rejection_reason'] ?? null; 
+                $question->approved_by = null;
+                $question->approved_at = null;
+            } elseif ($newStatus === 'pending') {
+                $question->approved_by = null;
+                $question->approved_at = null;
+                $question->rejected_by = null;
+                $question->rejected_at = null;
+                $question->rejection_reason = null;
+            }
+             // The status itself will be set by $question->fill($validatedData) if 'status' is in fillable and validatedData
+        } else if (isset($validatedData['status']) && $validatedData['status'] === 'rejected' && $validatedData['status'] === $originalStatus) {
+            // If status is 'rejected' and remains 'rejected', but rejection_reason might be updated
+            if (isset($validatedData['rejection_reason'])) {
+                 $question->rejection_reason = $validatedData['rejection_reason'];
             }
         }
 
-        $question->update($data);
 
-        Log::info('Question updated', [
-            'admin_id' => auth()->id(),
-            'question_id' => $question->id,
-            'status' => $data['status'] ?? $question->status,
-        ]);
+        $question->fill($validatedData);
+        $question->save();
 
         return redirect()
-            ->route('admin.questions.index')
-            ->with('success', 'Question updated successfully.');
+                ->route('admin.questions.index')
+                ->with('success', 'Question updated successfully.');
     }
 
     public function destroy(Question $question)
     {
+        
         $this->authorize('delete', $question);
 
         $question->delete();
@@ -162,9 +180,6 @@ class QuestionController extends Controller
             'status' => 'approved',
             'approved_by' => auth()->id(),
             'approved_at' => now(),
-            'rejected_by' => null,
-            'rejected_at' => null,
-            'rejection_reason' => null,
         ]);
 
         Log::info('Question approved', [
@@ -188,8 +203,6 @@ class QuestionController extends Controller
             'rejected_by' => auth()->id(),
             'rejected_at' => now(),
             'rejection_reason' => $request->rejection_reason,
-            'approved_by' => null,
-            'approved_at' => null,
         ]);
 
         Log::info('Question rejected', [

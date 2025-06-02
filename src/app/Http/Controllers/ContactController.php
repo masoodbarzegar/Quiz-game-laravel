@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Mail;
 use Inertia\Inertia;
+use Illuminate\Support\Facades\Log;
 
 class ContactController extends Controller
 {
@@ -24,7 +25,7 @@ class ContactController extends Controller
 
         // TODO: Implement email sending logic
         // For now, we'll just log the contact request
-        \Log::info('Contact form submission', $validated);
+        Log::info('Contact form submission', $request->only('name', 'email', 'subject', 'message'));
 
         return back()->with('success', 'Thank you for your message. We will get back to you soon!');
     }

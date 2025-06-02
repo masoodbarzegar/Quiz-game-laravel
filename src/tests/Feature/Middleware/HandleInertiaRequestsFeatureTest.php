@@ -56,8 +56,23 @@ class HandleInertiaRequestsFeatureTest extends TestCase
     #[Test]
     public function it_shares_client_user_data_when_client_is_authenticated()
     {
-        $this->markTestSkipped('Client part not implemented yet.');
-        // ... existing code ...
+        $client = Client::factory()->create([
+            'is_active' => true,
+        ]);
+
+        $this->actingAs($client, 'client');
+
+        $response = $this->get('/profile');
+
+        $response->assertInertia(fn (Assert $page) => $page
+            ->where('auth.user.id', $client->id)
+            ->where('auth.user.name', $client->name)
+            ->where('auth.user.email', $client->email)
+            ->where('auth.user.is_active', $client->is_active)
+            ->has('auth.user.created_at')
+            ->has('auth.user.updated_at')
+            ->has('auth.user.email_verified_at')
+        );
     }
 
     #[Test]
@@ -161,9 +176,9 @@ class HandleInertiaRequestsFeatureTest extends TestCase
             'role' => 'manager',
             'is_active' => true,
         ]);
-        // $client = Client::factory()->create([
-        //     'is_active' => true,
-        // ]);
+        $client = Client::factory()->create([
+            'is_active' => true,
+        ]);
 
         // Test admin route with admin guard
         $this->actingAs($admin, 'admin');
@@ -173,16 +188,15 @@ class HandleInertiaRequestsFeatureTest extends TestCase
         );
 
         // Test client route with client guard
-        $this->markTestSkipped('Client part not implemented yet.');
-        // $this->actingAs($client, 'client');
-        // $response = $this->get('/dashboard');
-        // $response->assertInertia(fn (Assert $page) => $page
-        //     ->where('auth.user.email', $client->email)
-        // );
+        $this->actingAs($client, 'client');
+        $response = $this->get('/profile');
+        $response->assertInertia(fn (Assert $page) => $page
+            ->where('auth.user.email', $client->email)
+        );
 
         // Test web route with web guard
         $this->actingAs($admin);
-        $response = $this->get('/dashboard');
+        $response = $this->get('/');
         $response->assertInertia(fn (Assert $page) => $page
             ->where('auth.user.email', $admin->email)
         );

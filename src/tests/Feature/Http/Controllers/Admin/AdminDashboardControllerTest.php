@@ -147,7 +147,7 @@ class AdminDashboardControllerTest extends TestCase
     }
 
     #[Test]
-    public function general_admin_sees_total_questions(): void
+    public function general_admin_sees_pending_questions(): void
     {
         $response = $this->actingAs($this->general, 'admin')
             ->get(route('admin.dashboard'));
@@ -155,7 +155,8 @@ class AdminDashboardControllerTest extends TestCase
         $response->assertStatus(200);
         $response->assertInertia(fn ($assert) => $assert
             ->component('Admin/Dashboard')
-            ->where('roleData.total_questions', 6)
+            ->has('roleData.pending_questions', 3)
+            ->where('roleData.pending_questions.0.status', 'pending')
         );
     }
 

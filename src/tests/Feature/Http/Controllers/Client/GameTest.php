@@ -95,14 +95,29 @@ class GameTest extends TestCase
         $response = $this->followingRedirects()
             ->get(route('play.start', $this->game->slug));
 
-        //$response->assertStatus(200);
-        dump($response->exception);
+        $response->assertStatus(200);
 
         $this->assertDatabaseHas('game_sessions', [
             'client_id' => $this->client->id,
             'game_id' => $this->game->id,
             'status' => 'in_progress',
         ]);
+    }
+
+    #[Test]
+    public function it_redirects_to_active_session_if_one_exists_on_start(): void
+    {
+        $client = Client::factory()->create();
+        $game = Game::factory()->create();
+        $activeSession = GameSession::factory()->create([
+            'client_id' => $client->id,
+            'game_id' => $game->id,
+            'status' => 'in_progress'
+        ]);
+
+        $response = $this->actingAs($client, 'client')->get(route('play.start', $game));
+
+        $response->assertRedirect(route('play.game', [$game->slug, $activeSession->id]));
     }
 
     #[Test]
@@ -251,7 +266,67 @@ class GameTest extends TestCase
 
         $response = $this->actingAs($this->client, 'client')
             ->get(route('play.result', [$this->game->slug, $session->id]));
-
+        
         $response->assertStatus(403);
+    }
+
+    #[Test]
+    public function end_game_action_requires_valid_data()
+    {
+        $session = GameSession::factory()->create([
+            'client_id' => $this->client->id,
+            'game_id' => $this->game->id,
+            'status' => 'in_progress',
+        ]);
+
+        // Test with missing main fields
+        $responseMissing = $this->actingAs($this->client, 'client')
+            ->post(route('play.end', [$this->game->slug, $session->id]), [
+                '_token' => csrf_token(),
+                // Missing: answers, final_score, lives_remaining, time_remaining, etc.
+            ]);
+        $responseMissing->assertSessionHasErrors([
+            'answers', 'final_score', 'lives_remaining', 'time_remaining', 
+            'total_time_taken', 'end_reason', 'questions_answered', 
+            'correct_answers', 'incorrect_answers'
+        ]);
+
+        // Test with invalid answers array structure
+        $question = Question::factory()->create();
+        $invalidAnswersPayload = [
+            '_token' => csrf_token(),
+            'answers' => [
+                [
+                    // Missing question_id
+                    'selected_answer' => 'some answer',
+                    'is_correct' => true,
+                    'time_taken' => 10,
+                ],
+                [
+                    'question_id' => $question->id,
+                    'selected_answer' => 'another answer',
+                    'is_correct' => 'not-a-boolean', // Invalid type
+                    'time_taken' => 'not-an-integer', // Invalid type
+                ]
+            ],
+            // Provide other required fields to isolate answers validation
+            'final_score' => 0,
+            'lives_remaining' => 1,
+            'time_remaining' => 100,
+            'total_time_taken' => 20,
+            'end_reason' => 'test',
+            'questions_answered' => 2,
+            'correct_answers' => 1,
+            'incorrect_answers' => 1,
+        ];
+
+        $responseInvalidAnswers = $this->actingAs($this->client, 'client')
+            ->post(route('play.end', [$this->game->slug, $session->id]), $invalidAnswersPayload);
+        
+        $responseInvalidAnswers->assertSessionHasErrors([
+            'answers.0.question_id', 
+            'answers.1.is_correct',
+            'answers.1.time_taken'
+        ]);
     }
 } 

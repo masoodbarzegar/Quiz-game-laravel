@@ -5,6 +5,8 @@ use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Admin\AdminUserController;
 use App\Http\Controllers\Admin\QuestionController;
+use App\Http\Controllers\Admin\ClientController;
+use App\Http\Controllers\Admin\GameReportController;
 // use App\Http\Controllers\Admin\UserController;
 use Illuminate\Support\Facades\Route;
 
@@ -34,7 +36,14 @@ Route::middleware(['auth:admin'])->group(function () {
         Route::put('users/{user}', [AdminUserController::class, 'update'])->name('users.update');
         Route::delete('users/{user}', [AdminUserController::class, 'destroy'])->name('users.destroy');
         Route::post('users/{user}/toggle-status', [AdminUserController::class, 'toggleStatus'])->name('users.toggle-status');
-    });
+    
+        // Client Management Routes (accessible by authenticated admins)
+        Route::resource('clients', ClientController::class)->except(['show'])->names('clients');
+        Route::post('clients/{client}/toggle-active', [ClientController::class, 'toggleActive'])->name('clients.toggle-active');
+
+         // Game Report Routes (accessible by authenticated admins)
+        Route::get('game-reports', [GameReportController::class, 'index'])->name('game-reports.index');
+    });    
 
     // Question management routes (accessible by manager, corrector, and general)
     Route::middleware('admin.role:manager,corrector,general')->group(function () {

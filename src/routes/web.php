@@ -66,29 +66,5 @@ Route::middleware(['auth:client'])->group(function () {
 
 // Admin routes - apply web middleware to all admin routes
 Route::prefix('admin')->name('admin.')->middleware('web')->group(function () {
-    Log::info('Loading admin routes');
-    
-    // Debug route to show middleware
-    Route::get('debug-middleware', function () {
-        $middleware = [
-            'route' => request()->route()->middleware(),
-            'current' => request()->route()->gatherMiddleware(),
-        ];
-        Log::info('Debug middleware', $middleware);
-        return response()->json($middleware);
-    })->name('debug.middleware');
-    
-    // Test route with middleware applied directly
-    Route::get('test-direct', function () {
-        Log::info('Test direct route accessed');
-        return inertia('Admin/Test');
-    })->middleware([\App\Http\Middleware\TestMiddleware::class])->name('test.direct');
-    
-    // Test route in web.php
-    Route::get('test-web', function () {
-        Log::info('Test web route accessed');
-        return inertia('Admin/Test');
-    })->name('test.web');
-    
     require __DIR__.'/admin.php';
 });

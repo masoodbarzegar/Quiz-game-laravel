@@ -4,60 +4,102 @@ namespace App\Policies;
 
 use App\Models\Question;
 use App\Models\User;
+use Illuminate\Auth\Access\Response;
 
 class QuestionPolicy
 {
-    public function viewAny(User $user)
+    /**
+     * Determine whether the user can view any models.
+     */
+    public function viewAny(User $user): bool
     {
-        return $user->hasRole(['manager', 'corrector', 'general']);
+        return $user->hasAnyRole(['manager', 'corrector', 'general']);
     }
 
-    public function view(User $user, Question $question)
+    /**
+     * Determine whether the user can view the model.
+     */
+    public function view(User $user, Question $question): Response
     {
-        return $user->hasRole(['manager', 'corrector', 'general']);
-    }
-
-    public function create(User $user)
-    {
-        return $user->hasRole(['manager', 'general']);
-    }
-
-    public function update(User $user, Question $question)
-    {
-        // Allow managers and correctors to edit any question
-        if ($user->hasRole(['manager', 'corrector'])) {
-            return true;
+        if ($user->hasAnyRole(['manager', 'corrector'])) {
+            return Response::allow();
         }
 
-        // General users can only edit their own questions if status is pending or rejected (not approved)
-        if ($user->hasRole('general')) {
-            return $question->created_by === $user->id && in_array($question->status, ['pending', 'rejected']);
+        if ($user->isGeneral() && $question->created_by === $user->id) {
+            return Response::allow();
         }
 
-        return false;
+        return Response::denyWithStatus(403, 'You do not have permission to view this question.');
     }
 
-    public function delete(User $user, Question $question)
+    /**
+     * Determine whether the user can create models.
+     */
+    public function create(User $user): Response
     {
-        // Only managers can delete questions
-        return $user->hasRole('manager');
+        if ($user->hasAnyRole(['manager', 'general'])) {
+            return Response::allow();
+        }
+        return Response::denyWithStatus(403, 'You do not have permission to create questions.');
     }
 
-    public function approve(User $user, Question $question)
+    /**
+     * Determine whether the user can update the model.
+     */
+    public function update(User $user, Question $question): Response
     {
-        // Both managers and correctors can approve/reject questions
-        return $user->hasRole(['manager', 'corrector']);
+        if ($user->isManager() || $user->isCorrector()) {
+            return Response::allow();
+        }
+
+        if ($user->isGeneral() && $question->created_by === $user->id && ($question->status === 'pending' || $question->status === 'rejected')) {
+            return Response::allow();
+        }
+
+        return Response::denyWithStatus(403, 'You do not have permission to update this question or it is not in an editable state.');
     }
 
-    public function restore(User $user, Question $question)
+    /**
+     * Determine whether the user can delete the model.
+     */
+    public function delete(User $user, Question $question): Response
     {
-        // Only managers can restore deleted questions
-        return $user->hasRole('manager');
+        if ($user->isManager()) {
+            return Response::allow();
+        }
+        return Response::denyWithStatus(403, 'You do not have permission to delete this question.');
     }
 
-    public function forceDelete(User $user, Question $question)
+    /**
+     * Determine whether the user can approve the question.
+     */
+    public function approve(User $user, Question $question): Response
     {
-        // Only managers can permanently delete questions
-        return $user->hasRole('manager');
+        if ($user->isManager() || $user->isCorrector()) {
+            return Response::allow();
+        }
+        return Response::denyWithStatus(403, 'You do not have permission to approve questions.');
     }
+
+    /**
+     * Determine whether the user can reject the question.
+     */
+    public function reject(User $user, Question $question): Response
+    {
+        if ($user->isManager() || $user->isCorrector()) {
+            return Response::allow();
+        }
+        return Response::denyWithStatus(403, 'You do not have permission to reject questions.');
+    }
+
+    // Add other policy methods like restore, forceDelete if needed, for example:
+    // public function restore(User $user, Question $question): bool
+    // {
+    //     return $user->isManager();
+    // }
+
+    // public function forceDelete(User $user, Question $question): bool
+    // {
+    //     return $user->isManager();
+    // }
 } 

@@ -230,4 +230,71 @@ class UserTest extends TestCase
         $this->assertTrue($this->general->hasRole(['manager', 'general']));
         $this->assertFalse($this->general->hasRole(['manager', 'corrector']));
     }
+
+    #[Test]
+    public function user_has_many_created_approved_rejected_questions(): void
+    {
+        $user = User::factory()->create();
+        Question::factory()->count(2)->create(['created_by' => $user->id]);
+        Question::factory()->count(3)->create(['approved_by' => $user->id]);
+        Question::factory()->count(4)->create(['rejected_by' => $user->id]);
+
+        $this->assertCount(2, $user->createdQuestions);
+        $this->assertCount(3, $user->approvedQuestions);
+        $this->assertCount(4, $user->rejectedQuestions);
+    }
+
+    #[Test]
+    public function has_role_checks_correctly_for_single_role(): void
+    {
+        $user = User::factory()->make(['role' => 'manager']);
+        $this->assertTrue($user->hasRole('manager'));
+        $this->assertFalse($user->hasRole('corrector'));
+    }
+
+    #[Test]
+    public function has_role_checks_correctly_for_array_of_roles(): void
+    {
+        $user = User::factory()->make(['role' => 'corrector']);
+        $this->assertTrue($user->hasRole(['manager', 'corrector']));
+        $this->assertFalse($user->hasRole(['manager', 'general']));
+    }
+
+    #[Test]
+    public function has_any_role_checks_correctly(): void
+    {
+        $manager = User::factory()->make(['role' => 'manager']);
+        $this->assertTrue($manager->hasAnyRole(['manager', 'admin']));
+        $this->assertFalse($manager->hasAnyRole(['corrector', 'general']));
+
+        $general = User::factory()->make(['role' => 'general']);
+        $this->assertTrue($general->hasAnyRole(['general', 'user']));
+    }
+
+    #[Test]
+    public function role_specific_methods_work_correctly(): void
+    {
+        $manager = User::factory()->make(['role' => 'manager']);
+        $this->assertTrue($manager->isManager());
+        $this->assertFalse($manager->isCorrector());
+        $this->assertFalse($manager->isGeneral());
+
+        $corrector = User::factory()->make(['role' => 'corrector']);
+        $this->assertFalse($corrector->isManager());
+        $this->assertTrue($corrector->isCorrector());
+        $this->assertFalse($corrector->isGeneral());
+
+        $general = User::factory()->make(['role' => 'general']);
+        $this->assertFalse($general->isManager());
+        $this->assertFalse($general->isCorrector());
+        $this->assertTrue($general->isGeneral());
+    }
+
+    #[Test]
+    public function route_notification_for_mail_returns_email(): void
+    {
+        $email = 'test@example.com';
+        $user = User::factory()->make(['email' => $email]);
+        $this->assertEquals($email, $user->routeNotificationForMail());
+    }
 } 

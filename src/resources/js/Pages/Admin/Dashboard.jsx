@@ -62,18 +62,24 @@ export default function Dashboard({ stats, roleData }) {
 
             {/* Stats Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-                <div className="bg-white overflow-hidden shadow rounded-lg">
-                    <div className="p-5">
-                        <div className="text-sm font-medium text-gray-500">Total Clients</div>
-                        <div className="mt-1 text-3xl font-semibold text-gray-900">{stats.total_clients}</div>
-                    </div>
-                </div>
-                <div className="bg-white overflow-hidden shadow rounded-lg">
-                    <div className="p-5">
-                        <div className="text-sm font-medium text-gray-500">Active Clients</div>
-                        <div className="mt-1 text-3xl font-semibold text-gray-900">{stats.active_clients}</div>
-                    </div>
-                </div>
+                {/* Role-specific content */}               
+                {user?.role === 'manager' && (
+                    <>
+                        <div className="bg-white overflow-hidden shadow rounded-lg">
+                            <div className="p-5">
+                            <div className="text-sm font-medium text-gray-500">Total Clients</div>
+                            <div className="mt-1 text-3xl font-semibold text-gray-900">{stats.total_clients}</div>
+                            </div>
+                        </div>
+                        <div className="bg-white overflow-hidden shadow rounded-lg">
+                            <div className="p-5">
+                                <div className="text-sm font-medium text-gray-500">Active Clients</div>
+                            <div className="mt-1 text-3xl font-semibold text-gray-900">{stats.active_clients}</div>
+                            </div>
+                        </div>
+                    </>
+                )}
+
                 <div className="bg-white overflow-hidden shadow rounded-lg">
                     <div className="p-5">
                         <div className="text-sm font-medium text-gray-500">Total Questions</div>

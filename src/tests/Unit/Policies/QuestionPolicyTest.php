@@ -7,7 +7,7 @@ use App\Models\Question;
 use App\Policies\QuestionPolicy;
 use PHPUnit\Framework\TestCase;
 use PHPUnit\Framework\Attributes\Test;  
-
+use Illuminate\Auth\Access\Response;
 
 class QuestionPolicyTest extends TestCase
 {
@@ -42,19 +42,35 @@ class QuestionPolicyTest extends TestCase
         return $q;
     }
 
+    private function assertPolicyAllows($result)
+    {
+        if ($result instanceof Response) {
+            $this->assertTrue($result->allowed());
+        } else {
+            $this->assertTrue($result);
+        }
+    }
+
+    private function assertPolicyDenies($result)
+    {
+        if ($result instanceof Response) {
+            $this->assertFalse($result->allowed());
+        } else {
+            $this->assertFalse($result);
+        }
+    }
+
     #[Test]
     public function manager_can_do_everything()
     {
         $manager = $this->makeUser('manager', 1);
         $question = $this->makeQuestion(2, 'pending');
-        $this->assertTrue($this->policy->viewAny($manager));
-        $this->assertTrue($this->policy->view($manager, $question));
-        $this->assertTrue($this->policy->create($manager));
-        $this->assertTrue($this->policy->update($manager, $question));
-        $this->assertTrue($this->policy->delete($manager, $question));
-        $this->assertTrue($this->policy->approve($manager, $question));
-        $this->assertTrue($this->policy->restore($manager, $question));
-        $this->assertTrue($this->policy->forceDelete($manager, $question));
+        $this->assertPolicyAllows($this->policy->viewAny($manager));
+        $this->assertPolicyAllows($this->policy->view($manager, $question));
+        $this->assertPolicyAllows($this->policy->create($manager));
+        $this->assertPolicyAllows($this->policy->update($manager, $question));
+        $this->assertPolicyAllows($this->policy->delete($manager, $question));
+        $this->assertPolicyAllows($this->policy->approve($manager, $question));
     }
 
     #[Test]
@@ -62,24 +78,25 @@ class QuestionPolicyTest extends TestCase
     {
         $corrector = $this->makeUser('corrector', 2);
         $question = $this->makeQuestion(3, 'pending');
-        $this->assertTrue($this->policy->viewAny($corrector));
-        $this->assertTrue($this->policy->view($corrector, $question));
-        $this->assertFalse($this->policy->create($corrector));
-        $this->assertTrue($this->policy->update($corrector, $question));
-        $this->assertFalse($this->policy->delete($corrector, $question));
-        $this->assertTrue($this->policy->approve($corrector, $question));
-        $this->assertFalse($this->policy->restore($corrector, $question));
-        $this->assertFalse($this->policy->forceDelete($corrector, $question));
+        $this->assertPolicyAllows($this->policy->viewAny($corrector));
+        $this->assertPolicyAllows($this->policy->view($corrector, $question));
+        $this->assertPolicyDenies($this->policy->create($corrector));
+        $this->assertPolicyAllows($this->policy->update($corrector, $question));
+        $this->assertPolicyDenies($this->policy->delete($corrector, $question));
+        $this->assertPolicyAllows($this->policy->approve($corrector, $question));
     }
 
     #[Test]
     public function general_can_view_and_create()
     {
         $general = $this->makeUser('general', 3);
-        $question = $this->makeQuestion(3, 'pending');
-        $this->assertTrue($this->policy->viewAny($general));
-        $this->assertTrue($this->policy->view($general, $question));
-        $this->assertTrue($this->policy->create($general));
+        $ownQuestion = $this->makeQuestion(3, 'pending');
+        $otherQuestion = $this->makeQuestion(4, 'pending');
+
+        $this->assertPolicyAllows($this->policy->viewAny($general));
+        $this->assertPolicyAllows($this->policy->view($general, $ownQuestion));
+        $this->assertPolicyDenies($this->policy->view($general, $otherQuestion));
+        $this->assertPolicyAllows($this->policy->create($general));
     }
 
     #[Test]
@@ -90,10 +107,10 @@ class QuestionPolicyTest extends TestCase
         $ownRejected = $this->makeQuestion(3, 'rejected');
         $ownApproved = $this->makeQuestion(3, 'approved');
         $othersPending = $this->makeQuestion(4, 'pending');
-        $this->assertTrue($this->policy->update($general, $ownPending));
-        $this->assertTrue($this->policy->update($general, $ownRejected));
-        $this->assertFalse($this->policy->update($general, $ownApproved));
-        $this->assertFalse($this->policy->update($general, $othersPending));
+        $this->assertPolicyAllows($this->policy->update($general, $ownPending));
+        $this->assertPolicyAllows($this->policy->update($general, $ownRejected));
+        $this->assertPolicyDenies($this->policy->update($general, $ownApproved));
+        $this->assertPolicyDenies($this->policy->update($general, $othersPending));
     }
 
     #[Test]
@@ -101,9 +118,7 @@ class QuestionPolicyTest extends TestCase
     {
         $general = $this->makeUser('general', 3);
         $question = $this->makeQuestion(3, 'pending');
-        $this->assertFalse($this->policy->delete($general, $question));
-        $this->assertFalse($this->policy->approve($general, $question));
-        $this->assertFalse($this->policy->restore($general, $question));
-        $this->assertFalse($this->policy->forceDelete($general, $question));
+        $this->assertPolicyDenies($this->policy->delete($general, $question));
+        $this->assertPolicyDenies($this->policy->approve($general, $question));
     }
 } 

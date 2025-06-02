@@ -52,7 +52,7 @@ class DashboardController extends Controller
         ]);
 
         // Optimize client queries
-        $clients = Client::select('id', 'is_active', 'created_at')
+        $clients = Client::select('id', 'name', 'email', 'phone', 'is_active', 'created_at')
             ->latest()
             ->get();
 
@@ -86,7 +86,7 @@ class DashboardController extends Controller
                 'recent_clients' => $clients
                     ->take(5)
                     ->map(fn($client) => $client->only([
-                        'id', 'created_at', 'is_active'
+                        'id', 'name', 'email', 'phone', 'created_at', 'is_active'
                     ])),
             ],
             'corrector' => [
@@ -98,7 +98,12 @@ class DashboardController extends Controller
                     ]))->values(),
             ],
             'general' => [
-                'total_questions' => $questions->count(),
+                // Use the already fetched questions collection
+                'pending_questions' => $questions->where('status', 'pending')->where('created_by', '!=', Auth::guard('admin')->user()->id)
+                    ->take(5)
+                    ->map(fn($q) => collect($q->toArray())->only([
+                        'id', 'question_text', 'category', 'difficulty_level', 'status', 'created_at'
+                    ]))->values(),
             ],
             default => [],
         };

@@ -54,19 +54,34 @@ export default function Sidebar({
         },
         // Manager only items
         {
-            name: 'Users',
+            name: 'AdminUsers',
             href: '/admin/users',
             icon: UserGroupIcon,
             current: url.startsWith('/admin/users'),
             roles: ['manager']
         },
         {
-            name: 'Reports',
-            href: '/admin/reports',
-            icon: ChartBarIcon,
-            current: url.startsWith('/admin/reports'),
+            name: 'Clients',
+            href: '/admin/clients',
+            icon: UserGroupIcon,
+            current: url.startsWith('/admin/clients'),
             roles: ['manager']
-        }
+        },
+        {
+            name: 'Reports',
+            icon: ChartBarIcon,
+            current: url.startsWith('/admin/questions'),
+            roles: ['manager'],
+            children: [
+                {
+                    name: 'Game Reports',
+                    href: '/admin/game-reports',
+                    current: url.startsWith('/admin/game-reports'),
+                    roles: ['manager', 'corrector', 'general']
+                },
+
+            ]
+        },
     ];
 
     // Combine and filter navigation based on user role

@@ -7,6 +7,7 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 use Inertia\Testing\AssertableInertia as Assert;
 use PHPUnit\Framework\Attributes\Test;
+use Illuminate\Support\Facades\Hash;
 
 class AuthTest extends TestCase
 {
@@ -107,6 +108,36 @@ class AuthTest extends TestCase
 
         $response->assertSessionHasErrors('email');
         $this->assertGuest();
+    }
+
+    #[Test]
+    public function client_cannot_login_with_non_existent_email(): void
+    {
+        $response = $this->post(route('login'), [
+            'email' => 'nonexistent@example.com',
+            'password' => 'password123',
+            '_token' => csrf_token(),
+        ]);
+
+        $response->assertSessionHasErrors('email');
+        $this->assertGuest('client');
+    }
+
+    #[Test]
+    public function client_registration_fails_with_duplicate_email(): void
+    {
+        Client::factory()->create(['email' => 'existing@example.com', 'password' => Hash::make('password')]);
+
+        $response = $this->post(route('register'), [
+            'name' => 'Another User',
+            'email' => 'existing@example.com',
+            'password' => 'password123',
+            'password_confirmation' => 'password123',
+            '_token' => csrf_token(),
+        ]);
+
+        $response->assertSessionHasErrors('email');
+        $this->assertGuest('client');
     }
 
     #[Test]
