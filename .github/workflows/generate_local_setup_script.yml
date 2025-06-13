@@ -1,0 +1,140 @@
+name: Generate Local Setup Script
+
+on:
+  workflow_dispatch:
+    inputs:
+      os_type:
+        description: "Select OS"
+        required: true
+        default: "linux"
+        type: choice
+        options:
+          - linux
+          - mac
+          - windows
+
+jobs:
+  generate-script:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Create setup script
+      run: |
+        OS_TYPE="${{ inputs.os_type }}"
+        echo "Generating setup script for $OS_TYPE..."
+
+        REPO_URL="https://github.com/masoodbarzegar/Quiz-game-laravel.git"
+
+        if [[ "$OS_TYPE" == "linux" || "$OS_TYPE" == "mac" ]]; then
+          echo '#!/bin/bash' > setup.sh
+          echo "echo '🚀 Cloning repository...'" >> setup.sh
+          echo "git clone $REPO_URL" >> setup.sh
+          echo "cd Quiz-game-laravel/src" >> setup.sh
+          
+          echo "echo '🛠 Setting up environment variables...'" >> setup.sh
+          echo "cp .env.example .env" >> setup.sh
+          echo "sed -i 's/DB_CONNECTION=sqlite/DB_CONNECTION=mysql/' .env" >> setup.sh
+          echo "sed -i 's/# DB_HOST=127.0.0.1/DB_HOST=mysql/' .env" >> setup.sh
+          echo "sed -i 's/# DB_PORT=3306/DB_PORT=3306/' .env" >> setup.sh
+          echo "sed -i 's/# DB_DATABASE=laravel/DB_DATABASE=quiz/' .env" >> setup.sh
+          echo "sed -i 's/# DB_USERNAME=root/DB_USERNAME=quizuser/' .env" >> setup.sh
+          echo "sed -i 's/# DB_PASSWORD=/DB_PASSWORD=quizpass/' .env" >> setup.sh
+
+          echo "cd .." >> setup.sh
+
+          echo "echo '🐳 Starting Docker containers...'" >> setup.sh
+          echo "docker compose up -d" >> setup.sh
+          
+          echo "echo '📦 Installing dependencies...'" >> setup.sh
+          echo "docker exec -it quiz-laravel-app-4 composer install" >> setup.sh
+          echo "docker exec -it quiz-laravel-app-4 npm install" >> setup.sh
+
+          echo "echo '🔧 Building frontend assets...'" >> setup.sh
+          echo "docker exec -it quiz-laravel-app-4 npm run build" >> setup.sh
+          
+          echo "echo '🔑 Generating application key...'" >> setup.sh
+          echo "docker exec -it quiz-laravel-app-4 php artisan key:generate" >> setup.sh
+          
+          echo "echo '📂 Running database migrations...'" >> setup.sh
+          echo "docker exec -it quiz-laravel-app-4 php artisan migrate --seed" >> setup.sh
+
+          echo "echo '📂 Creating storage directories...'" >> setup.sh
+          echo "docker exec -it quiz-laravel-app-4 mkdir -p /var/www/html/storage/framework/cache" >> setup.sh
+          echo "docker exec -it quiz-laravel-app-4 mkdir -p /var/www/html/storage/framework/views" >> setup.sh
+          echo "docker exec -it quiz-laravel-app-4 mkdir -p /var/www/html/storage/framework/sessions" >> setup.sh
+          
+          echo "echo '🔒 Fixing permissions for Laravel storage and framework...'" >> setup.sh
+          echo "docker exec -it quiz-laravel-app-4 chmod -R 775 /var/www/html/bootstrap/cache" >> setup.sh
+          echo "docker exec -it quiz-laravel-app-4 chmod -R 775 /var/www/html/storage" >> setup.sh
+          echo "docker exec -it quiz-laravel-app-4 chmod -R 775 /var/www/html/storage/framework" >> setup.sh
+          echo "docker exec -it quiz-laravel-app-4 chown -R www-data:www-data /var/www/html/storage" >> setup.sh
+          echo "docker exec -it quiz-laravel-app-4 chown -R www-data:www-data /var/www/html/bootstrap/cache" >> setup.sh
+          echo "docker exec -it quiz-laravel-app-4 chown -R www-data:www-data /var/www/html/storage/framework" >> setup.sh
+          
+          echo "echo '🔗 Creating storage symlink...'" >> setup.sh
+          echo "docker exec -it quiz-laravel-app-4 php artisan storage:link" >> setup.sh
+          
+          echo "echo '✅ Setup complete!'" >> setup.sh
+          echo "echo '✅ Browse --> http://localhost'" >> setup.sh
+        
+        elif [[ "$OS_TYPE" == "windows" ]]; then
+          echo 'Write-Output "Cloning repository..."' > setup.ps1
+          echo "git clone $REPO_URL" >> setup.ps1
+          echo "cd Quiz-game-laravel/src" >> setup.ps1
+          
+          echo 'Write-Output "Setting up environment variables..."' >> setup.ps1
+          echo 'Copy-Item ".env.example" ".env"' >> setup.ps1
+          echo '(Get-Content .env) `
+              -replace "DB_CONNECTION=sqlite", "DB_CONNECTION=mysql" `
+              -replace "# DB_HOST=127.0.0.1", "DB_HOST=mysql" `
+              -replace "# DB_PORT=3306", "DB_PORT=3306" `
+              -replace "# DB_DATABASE=laravel", "DB_DATABASE=quiz" `
+              -replace "# DB_USERNAME=root", "DB_USERNAME=quizuser" `
+              -replace "# DB_PASSWORD=", "DB_PASSWORD=quizpass" `
+              | Set-Content -Path .env' >> setup.ps1
+
+          echo 'cd ..' >> setup.ps1
+
+          echo 'Write-Output "Starting Docker containers..."' >> setup.ps1
+          echo "docker compose up -d" >> setup.ps1
+
+          echo 'Write-Output "Installing dependencies..."' >> setup.ps1
+          echo "docker exec -it quiz-laravel-app-4 composer install" >> setup.ps1
+          echo "docker exec -it quiz-laravel-app-4 npm install" >> setup.ps1
+
+          echo 'Write-Output "Building frontend assets..."' >> setup.ps1
+          echo "docker exec -it quiz-laravel-app-4 npm run build" >> setup.ps1
+
+          echo 'Write-Output "Generating application key..."' >> setup.ps1
+          echo "docker exec -it quiz-laravel-app-4 php artisan key:generate" >> setup.ps1
+
+          echo 'Write-Output "Running database migrations..."' >> setup.ps1
+          echo "docker exec -it quiz-laravel-app-4 php artisan migrate --seed" >> setup.ps1
+          
+          echo 'Write-Output "Creating storage directories..."' >> setup.ps1
+          echo "docker exec -it quiz-laravel-app-4 mkdir -p /var/www/html/storage/framework/cache" >> setup.ps1
+          echo "docker exec -it quiz-laravel-app-4 mkdir -p /var/www/html/storage/framework/views" >> setup.ps1
+          echo "docker exec -it quiz-laravel-app-4 mkdir -p /var/www/html/storage/framework/sessions" >> setup.ps1
+
+          echo 'Write-Output "Fixing permissions..."' >> setup.ps1
+          echo "docker exec -it quiz-laravel-app-4 chmod -R 775 /var/www/html/bootstrap/cache" >> setup.ps1
+          echo "docker exec -it quiz-laravel-app-4 chmod -R 775 /var/www/html/storage" >> setup.ps1
+          echo "docker exec -it quiz-laravel-app-4 chown -R www-data:www-data /var/www/html/storage" >> setup.ps1
+          echo "docker exec -it quiz-laravel-app-4 chown -R www-data:www-data /var/www/html/bootstrap/cache" >> setup.ps1
+          echo "docker exec -it quiz-laravel-app-4 chmod -R 775 /var/www/html/storage/framework" >> setup.ps1
+          echo "docker exec -it quiz-laravel-app-4 chown -R www-data:www-data /var/www/html/storage/framework" >> setup.ps1
+
+          echo 'Write-Output "Creating storage symlink..."' >> setup.ps1
+          echo "docker exec -it quiz-laravel-app-4 php artisan storage:link" >> setup.ps1
+          
+          echo 'Write-Output "Setup complete!"' >> setup.ps1
+          echo 'Write-Output "Browse --> http://localhost"' >> setup.ps1
+        fi
+
+    - name: Upload setup script as artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: setup-script
+        path: setup.*
